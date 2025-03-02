@@ -1,46 +1,37 @@
 from collections import deque
 import time
-from jarvis.core.voice_generator import VoiceGenerator  
+
+from jarvis.core.speech_to_text.stream_content_extractor import StreamContentExtractor
+from jarvis.core.voice_generator import VoiceGenerator
 
 class TextToSpeechStreamer:
-    def __init__(self, voice_generator: VoiceGenerator):
+    def __init__(self, voice_generator: VoiceGenerator, extractor: StreamContentExtractor):
         self.tts = voice_generator
-        self.paragraphs = deque()  # Queue für erkannte Absätze
+        self.extractor = extractor  
+        self.paragraphs = deque()  
 
     def process_stream(self, openai_stream):
-        def extract_content(chunk):
-            if hasattr(chunk, "choices") and hasattr(chunk.choices[0], "delta"):
-                return chunk.choices[0].delta.content or ""
-            if hasattr(chunk, "content"):
-                return chunk.content or ""
-            return ""
-
-        buffer = ""  # Zwischenspeicher für den aktuellen Absatz
+        buffer = ""
 
         for chunk in openai_stream:
-            part = extract_content(chunk)
-            buffer += part  # Chunk in den Puffer anhängen
+            part = self.extractor.extract(chunk)
+            buffer += part
 
-            while "\n\n" in buffer:  
-                paragraph, buffer = buffer.split("\n\n", 1)  
-                self.paragraphs.append(paragraph.strip())  
+            while "\n\n" in buffer:
+                paragraph, buffer = buffer.split("\n\n", 1)
+                self.paragraphs.append(paragraph.strip())
 
-                print(f"\n📝 Neuer Absatz erkannt:\n{paragraph.strip()}")  
-                
-                # 🔊 Sprachausgabe für den erkannten Absatz
+                print(f"\n📝 Neuer Absatz erkannt:\n{paragraph.strip()}")
                 self.speak_text(paragraph.strip())
 
         if buffer.strip():
             self.paragraphs.append(buffer.strip())
             print(f"\n📝 Letzter Absatz:\n{buffer.strip()}")
-            
-            # 🔊 Sprachausgabe für den letzten Absatz
             self.speak_text(buffer.strip())
 
         return list(self.paragraphs)
 
     def speak_text(self, text):
-        """Gibt den Text über das TTS-System aus"""
         if self.tts:
             print(f"🔊 TTS: Spreche Absatz ...")
             self.tts.speak(text)

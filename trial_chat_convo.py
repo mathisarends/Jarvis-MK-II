@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
-from jarvis.core.text_to_speech_streamer import MinimalTextToSpeechStreamer
+from jarvis.core.speech_to_text.gemini_content_extractor import GeminiContentExtractor
+from jarvis.core.text_to_speech_streamer import TextToSpeechStreamer
 from jarvis.core.voice_generator import VoiceGenerator
 
 load_dotenv()
@@ -10,7 +11,7 @@ model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-thinking-exp-01-21")
 # model = ChatOpenAI(model="gpt-4o-mini")
 
 tts = VoiceGenerator()
-tts_streamer = MinimalTextToSpeechStreamer(tts)
+tts_streamer = TextToSpeechStreamer(tts, GeminiContentExtractor())
 
 chat_history = []
 

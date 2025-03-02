@@ -1,33 +1,13 @@
 from jarvis.core.text_to_speech_streamer import TextToSpeechStreamer
-
-# Fake-Stream mit inkrementellen Chunks
-# def mock_stream():
-#     chunks = [
-#         type("MockChunk", (object,), {"content": "This is the first paragraph. "})(),
-#         type("MockChunk", (object,), {"content": "It continues in another chunk.\n\n"})(),
-#         type("MockChunk", (object,), {"content": "Now comes the second paragraph, "})(),
-#         type("MockChunk", (object,), {"content": "which is also split over multiple chunks.\n\n"})(),
-#         type("MockChunk", (object,), {"content": "And here is the last one."})(),
-#     ]
-#     for chunk in chunks:
-#         yield chunk
-
-# # Testen der Methode mit Fake-Stream
-# tts_streamer = TextToSpeechStreamer(None)  # Kein VoiceGenerator für Test nötig
-# tts_streamer.process_stream(mock_stream())
-
-
-# print("="*80)
-
-from dotenv import load_dotenv
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain.schema import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from jarvis.core.voice_generator import VoiceGenerator
+from jarvis.core.speech_to_text.gemini_content_extractor import GeminiContentExtractor
 import time
 
 model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-thinking-exp-01-21")
 voice_generator = VoiceGenerator()
-tts_streamer = TextToSpeechStreamer(voice_generator)
+tts_streamer = TextToSpeechStreamer(voice_generator, GeminiContentExtractor())
 
 chat_history = []
 
