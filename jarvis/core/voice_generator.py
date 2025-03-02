@@ -1,15 +1,17 @@
 import os
 import shutil
+from openai import OpenAI
 from io import BytesIO
 from pydub import AudioSegment
 import pygame
 import threading
 import queue
+import time
 import uuid
-from openai import OpenAI
 
 class VoiceGenerator:
     def __init__(self, voice="nova", cache_dir="/tmp/tts_cache"):
+        """Initialisiert den TTS Generator mit OpenAI API und Vorausverarbeitung"""
         self.openai = OpenAI()
         self.voice = voice
         self.cache_dir = cache_dir
@@ -31,6 +33,7 @@ class VoiceGenerator:
         self.playback_worker.start()
         
     def _setup_ffmpeg(self):
+        """Überprüft und setzt den FFmpeg-Pfad, falls nötig"""
         ffmpeg_path = shutil.which("ffmpeg")
         if ffmpeg_path:
             print(f"✅ FFmpeg gefunden: {ffmpeg_path}")
@@ -39,6 +42,7 @@ class VoiceGenerator:
             os.environ["PATH"] += os.pathsep + r"C:\ffmpeg-2025-02-17-git-b92577405b-essentials_build\bin"
             
     def _setup_pygame(self):
+        """Initialisiert den pygame Mixer für die Audiowiedergabe"""
         try:
             pygame.mixer.quit()  
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
@@ -68,20 +72,26 @@ class VoiceGenerator:
                 print(f"❌ TTS-Verarbeitungsfehler: {e}")
     
     def _process_audio_queue(self):
+        """Worker-Thread, der vorbereitete Audiodateien abspielt"""
         while self.active:
             try:
+                # Hole die nächste Audio-Datei aus der Queue
                 text, audio_data = self.audio_queue.get(timeout=0.5)
                 
+                # Spiele die Audio-Datei ab
                 self._play_audio(audio_data)
                 
+                # Markiere Aufgabe als erledigt
                 self.audio_queue.task_done()
                 
             except queue.Empty:
+                # Queue Timeout, setze Schleife fort
                 pass
             except Exception as e:
                 print(f"❌ Audio-Wiedergabefehler: {e}")
     
     def _generate_speech(self, text):
+        """Generiert Sprache mit OpenAI TTS und gibt das Audio-Segment zurück"""
         try:
             # Generiere eine eindeutige ID für diese Anfrage
             text_hash = str(uuid.uuid4())[:8]
@@ -109,6 +119,7 @@ class VoiceGenerator:
             return None
     
     def _play_audio(self, audio_data):
+        """Spielt die Audiodaten ab mit Sperrmechanismus zur Vermeidung überlappender Wiedergabe"""
         with self._audio_lock:
             try:
                 if not pygame.mixer.get_init():
@@ -131,6 +142,8 @@ class VoiceGenerator:
                 audio_io.close()
 
     def speak(self, text):
+        """Fügt einen Text zur Sprachqueue für die Verarbeitung hinzu.
+        interrupt=True bewirkt, dass vorherige Aufträge abgebrochen werden."""
         if not text.strip():
             return
 

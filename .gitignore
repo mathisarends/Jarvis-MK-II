@@ -4,17 +4,11 @@ venv/
 __pycache__/
 *.py[cod]
 
-# VS Code
 .vscode/
 
-# Umgebungsvariablen
 .env
 
 temp
-
-# Gmail API sensitive files
-google_api/credentials.json
-google_api/token.pickle
 
 .cache
 
