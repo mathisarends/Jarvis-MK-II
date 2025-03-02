@@ -142,12 +142,10 @@ class VoiceGenerator:
                 audio_io.close()
 
     def speak(self, text):
-        """Fügt einen Text zur Sprachqueue für die Verarbeitung hinzu.
-        interrupt=True bewirkt, dass vorherige Aufträge abgebrochen werden."""
         if not text.strip():
             return
 
-        self._interrupt_playback()  
+        self._interrupt_playback()
         self.text_queue.put(text)
             
     def _interrupt_playback(self):
@@ -155,10 +153,7 @@ class VoiceGenerator:
             if pygame.mixer.get_init():
                 pygame.mixer.music.stop()
 
-        # 2. Queues leeren.
-        self._clear_queues()
-
-    def _clear_queues(self):
+    def clear_queues(self):
         with self.text_queue.mutex:
             self.text_queue.queue.clear()
         with self.audio_queue.mutex:
