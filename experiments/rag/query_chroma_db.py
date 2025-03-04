@@ -16,10 +16,8 @@ db = Chroma(persist_directory=persistent_directory,
 # Define the user's question
 query = "Beschreibe das Projekt Jarvis-MK-II"
 
-retriever = db.as_retriever(
-    search_type="similarity_score_threshold",
-    search_kwargs={"k": 3, "score_threshold": 0.5},
-)
+retriever = db.as_retriever()
+
 relevant_docs = retriever.invoke(query)
 
 # Display the relevant results with metadata
