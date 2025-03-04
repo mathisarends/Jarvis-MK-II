@@ -1,0 +1,70 @@
+**Jarvis-MK-II: Ein Überblick über das Projekt**
+
+### **1. Einleitung**
+Jarvis-MK-II ist ein leistungsstarkes, modular aufgebautes System zur Verarbeitung von Informationen mithilfe von Retrieval-Augmented Generation (RAG). Das Projekt zielt darauf ab, eine effiziente KI-gestützte Wissensbasis zu schaffen, die strukturierte und unstrukturierte Daten verarbeitet und darauf basierend intelligente Antworten generiert. 
+
+Das System kombiniert mehrere Komponenten, darunter Web-Crawling, Vektordatenbanken, Text-Embedding-Modelle und ein flexibles Retrieval-Interface, um hochrelevante Informationen aus großen Datenbeständen abzurufen.
+
+---
+
+### **2. Systemarchitektur**
+Jarvis-MK-II setzt sich aus mehreren Hauptkomponenten zusammen:
+
+#### **2.1 Datenquellen und Dokumentenverarbeitung**
+Das System verarbeitet eine Vielzahl von Datenquellen, darunter:
+- Lokale Textdateien
+- Web-Crawler (Firecrawl, Crawl4AI)
+- APIs und externe Wissensdatenbanken
+
+Diese Daten werden durch **TextLoader**-Module geladen und mit einem **CharacterTextSplitter** in sinnvolle Chunks unterteilt, um eine optimale Sucheffizienz zu gewährleisten.
+
+#### **2.2 Vektordatenbank (ChromaDB)**
+Die Vektordatenbank speichert eingebettete Dokumentenrepräsentationen, die mit **OpenAIEmbeddings** erstellt werden. Die Chunks enthalten Metadaten, die es ermöglichen, Informationen gezielt nach Quelle, Dokumentenlänge und Inhalt zu filtern.
+
+#### **2.3 Retrieval-Mechanismus**
+Jarvis-MK-II nutzt verschiedene Suchstrategien zur Ermittlung relevanter Informationen:
+- **Similarity Search**: Standardmethode zur Ermittlung der semantisch ähnlichsten Chunks.
+- **MMR (Maximal Marginal Relevance)**: Sorgt für eine Balance zwischen Relevanz und Diversität der Ergebnisse.
+- **Threshold-based Retrieval**: Definiert einen Mindestwert für die Relevanzbewertung.
+
+#### **2.4 Query-Handling & Antwortgenerierung**
+Benutzeranfragen werden an das System übergeben, das relevante Dokumente ermittelt und sie in einem generativen Modell (z. B. GPT) verarbeitet, um eine fundierte Antwort zu formulieren.
+
+---
+
+### **3. Workflow**
+Ein typischer Workflow in Jarvis-MK-II läuft wie folgt ab:
+1. **Datenimport:** Texte werden in die Vektordatenbank geladen und in embeddings umgewandelt.
+2. **Query-Verarbeitung:** Eine Benutzeranfrage wird analysiert und an den Retriever übergeben.
+3. **Dokumentenabruf:** Das System sucht nach relevanten Chunks basierend auf der Ähnlichkeit zur Anfrage.
+4. **Antwortgenerierung:** Die gefundenen Dokumente werden zur Kontextbildung genutzt und mit einem LLM kombiniert, um eine Antwort zu erstellen.
+
+---
+
+### **4. Herausforderungen und Optimierungen**
+Das Projekt steht vor mehreren Herausforderungen, die kontinuierlich verbessert werden:
+
+#### **4.1 Verbesserung der Datenaufbereitung**
+- Verwendung besserer Chunking-Methoden (RecursiveCharacterTextSplitter)
+- Implementierung einer sprachabhängigen Vorverarbeitung
+
+#### **4.2 Effizienzsteigerung beim Retrieval**
+- Optimierung der Suchparameter (z. B. `score_threshold` anpassen)
+- Wechsel zwischen "similarity" und "mmr" je nach Use Case
+
+#### **4.3 Erweiterung der Datenquellen**
+- Einbindung von Wikipedia, ArXiv oder Unternehmensdatenbanken
+- Nutzung von Firecrawl/Crawl4AI für tiefgehende Web-Recherche
+
+---
+
+### **5. Zukunftsaussichten**
+Das Ziel von Jarvis-MK-II ist die Entwicklung eines leistungsfähigen, skalierbaren und flexiblen RAG-Systems, das sich nahtlos in bestehende Workflows integrieren lässt. Mögliche Weiterentwicklungen sind:
+- **Automatische Sprachübersetzung** von Queries
+- **Erweiterung der Retrieval-Strategien** durch hybride Modelle
+- **Verbesserung der Erklärbarkeit** der generierten Antworten
+
+---
+
+### **6. Fazit**
+Jarvis-MK-II ist ein ambitioniertes Projekt, das fortschrittliche Retrieval- und KI-Techniken kombiniert, um effizient und genau auf Benutzeranfragen zu antworten. Die kontinuierliche Optimierung von Vektordatenbanken, Query-Handling und Antwortgenerierung macht das System zu einem vielversprechenden Werkzeug für den Einsatz in Forschung, Industrie und KI-gesteuerter Wissensverarbeitung.
