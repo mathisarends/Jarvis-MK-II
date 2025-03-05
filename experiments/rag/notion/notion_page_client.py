@@ -1,99 +1,106 @@
-
 import asyncio
+import re
+from typing import Any, Dict, Optional
 from experiments.rag.notion.abstract_notion_client import AbstractNotionClient
-
+from experiments.rag.notion.core.notion_block import NotionBlock
+from experiments.rag.notion.core.notion_markdown_converter import NotionMarkdownConverter
 
 class NotionPageClient(AbstractNotionClient):
-    """Client for interacting with Notion pages."""
+    """Client für die Interaktion mit Notion-Seiten."""
     
-    async def get_page_metadata(self, page_id: str):
-        """Retrieves metadata of a Notion page, including last edited time."""
+    def __init__(self):
+        """
+        Initialisiert den Client mit einem Markdown-Konverter.
+        
+        Args:
+            markdown_converter (NotionMarkdownConverter, optional): Benutzerdefinierter Konverter.
+        """
+        super().__init__()
+        self._markdown_converter = NotionMarkdownConverter()
+    
+    async def get_page_metadata(self, page_id: str) -> Optional[str]:
+        """
+        Ruft Metadaten einer Notion-Seite ab.
+        
+        Args:
+            page_id (str): Eindeutige Kennung der Seite.
+        
+        Returns:
+            Optional[str]: Zeitpunkt der letzten Bearbeitung oder None.
+        """
         endpoint = f"pages/{page_id}"
         response = await self._make_request("get", endpoint)
         response_json = response.json()
 
-        # Prüfe, ob ein Fehler aufgetreten ist
-        if "error" in response_json:
+        return response_json.get("last_edited_time") if "error" not in response_json else None
+
+    async def _parse_block(self, block: Dict[str, Any], depth: int = 0) -> NotionBlock:
+        """
+        Parst einen Notion-Block rekursiv.
+        
+        Args:
+            block (Dict): Rohdaten des Blocks.
+            depth (int): Verschachtelungstiefe.
+        
+        Returns:
+            NotionBlock: Strukturierter Block mit Kindern.
+        """
+        block_type = block.get("type")
+        rich_text = block.get(block_type, {}).get("rich_text", [])
+        text = "".join([t.get("plain_text", "") for t in rich_text]).strip()
+
+        # Überspringe leere Blöcke
+        if not text and not block.get("has_children", False):
             return None
 
-        return response_json.get("last_edited_time")  # Zeitstempel der letzten Änderung
-    
+        notion_block = NotionBlock(
+            type=block_type,
+            text=text,
+            depth=depth
+        )
 
-    async def get_page_text_content(self, page_id: str):
-        """Retrieves the text content from a Notion page by fetching its block children."""
-        endpoint = f"blocks/{page_id}/children"
-        response = await self._make_request("get", endpoint)
+        # Rekursives Laden von Kinderblöcken
+        if block.get("has_children", False):
+            children_endpoint = f"blocks/{block['id']}/children"
+            response = await self._make_request("get", children_endpoint)
+            children_blocks = response.json().get("results", [])
+            
+            for child_block in children_blocks:
+                child = await self._parse_block(child_block, depth + 1)
+                if child:
+                    notion_block.children.append(child)
 
-        # HTTPX Response in JSON umwandeln
-        response_json = response.json()  # Hier erfolgt die Umwandlung
+        return notion_block
 
-        if "error" in response_json:
-            return response_json
-
-        # Extrahiere nur textuelle Inhalte
-        text_content = []
-        for block in response_json.get("results", []):
-            block_type = block.get("type")
-            if block_type in ["paragraph", "heading_1", "heading_2", "heading_3", "bulleted_list_item", "numbered_list_item"]:
-                rich_text = block[block_type].get("rich_text", [])
-                text = "".join([t.get("plain_text", "") for t in rich_text])
-                if text:
-                    text_content.append(text)
-
-        return "\n".join(text_content)
-    
-    async def get_page_markdown_content(self, page_id: str):
-        """Retrieves the text content from a Notion page and formats it as Markdown."""
-        endpoint = f"blocks/{page_id}/children"
-        response = await self._make_request("get", endpoint)
-        response_json = response.json()
-
-        if "error" in response_json:
-            return response_json
-
-        # Markdown-Text speichern
-        markdown_content = []
-
-        for block in response_json.get("results", []):
-            block_type = block.get("type")
-            rich_text = block.get(block_type, {}).get("rich_text", [])
-
-            # Extrahiere den reinen Text aus Rich-Text-Objekten
-            text = "".join([t.get("plain_text", "") for t in rich_text])
-
-            # Wandle Notion-Typen in Markdown um
-            if block_type == "heading_1":
-                markdown_content.append(f"# {text}")
-            elif block_type == "heading_2":
-                markdown_content.append(f"## {text}")
-            elif block_type == "heading_3":
-                markdown_content.append(f"### {text}")
-            elif block_type == "bulleted_list_item":
-                markdown_content.append(f"- {text}")
-            elif block_type == "numbered_list_item":
-                markdown_content.append(f"1. {text}")  # Notion gibt keine Zahlen, nur Reihenfolge
-            elif block_type == "quote":
-                markdown_content.append(f"> {text}")
-            elif block_type == "code":
-                markdown_content.append(f"```\n{text}\n```")
-            elif block_type == "paragraph":
-                markdown_content.append(text)
+    async def get_page_markdown_content(self, page_id: str) -> str:
+        """
+        Ruft den Inhalt einer Notion-Seite als Markdown ab.
         
-        return "\n\n".join(markdown_content)  # Trenne Blöcke durch doppelte Zeilenumbrüche
+        Args:
+            page_id (str): Eindeutige Kennung der Seite.
+        
+        Returns:
+            str: Markdown-formatierter Seiteninhalt.
+        """
+        # Hole den Stammblock der Seite
+        root_block = await self._parse_block({"id": page_id, "type": "page", "has_children": True})
+        
+        # Konvertiere Block in Markdown
+        markdown_lines = self._markdown_converter.convert_block_to_markdown(root_block)
+        
+        # Bereinige und formatiere Markdown
+        clean_text = "\n".join(markdown_lines)
+        clean_text = re.sub(r"\n{3,}", "\n\n", clean_text)
 
-
-
+        return clean_text.strip()
 
 async def main():
     page_id = "1a6389d5-7bd3-80ac-a51b-ea79142d8204"
     client = NotionPageClient()
-    
-    # last_edited_time = await client.get_page_metadata(page_id)
-    # print(last_edited_time)
     
     content = await client.get_page_markdown_content(page_id)
     print("\n--- Notion Page Content ---\n")
     print(content)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+  asyncio.run(main())
