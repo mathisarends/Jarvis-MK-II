@@ -19,15 +19,6 @@ class NotionPageClient(AbstractNotionClient):
         self._markdown_converter = NotionMarkdownConverter()
     
     async def get_page_metadata(self, page_id: str) -> Optional[str]:
-        """
-        Ruft Metadaten einer Notion-Seite ab.
-        
-        Args:
-            page_id (str): Eindeutige Kennung der Seite.
-        
-        Returns:
-            Optional[str]: Zeitpunkt der letzten Bearbeitung oder None.
-        """
         endpoint = f"pages/{page_id}"
         response = await self._make_request("get", endpoint)
         response_json = response.json()
@@ -35,21 +26,10 @@ class NotionPageClient(AbstractNotionClient):
         return response_json.get("last_edited_time") if "error" not in response_json else None
 
     async def _parse_block(self, block: Dict[str, Any], depth: int = 0) -> NotionBlock:
-        """
-        Parst einen Notion-Block rekursiv.
-        
-        Args:
-            block (Dict): Rohdaten des Blocks.
-            depth (int): Verschachtelungstiefe.
-        
-        Returns:
-            NotionBlock: Strukturierter Block mit Kindern.
-        """
         block_type = block.get("type")
         rich_text = block.get(block_type, {}).get("rich_text", [])
         text = "".join([t.get("plain_text", "") for t in rich_text]).strip()
 
-        # Überspringe leere Blöcke
         if not text and not block.get("has_children", False):
             return None
 
@@ -74,11 +54,6 @@ class NotionPageClient(AbstractNotionClient):
 
     async def get_page_markdown_content(self, page_id: str) -> str:
         """
-        Ruft den Inhalt einer Notion-Seite als Markdown ab.
-        
-        Args:
-            page_id (str): Eindeutige Kennung der Seite.
-        
         Returns:
             str: Markdown-formatierter Seiteninhalt.
         """
