@@ -1,9 +1,9 @@
 import asyncio
 import re
 from typing import Any, Dict, Optional
-from experiments.rag.notion.abstract_notion_client import AbstractNotionClient
-from experiments.rag.notion.core.notion_block import NotionBlock
-from experiments.rag.notion.core.notion_markdown_converter import NotionMarkdownConverter
+from tools.notion.core.abstract_notion_client import AbstractNotionClient
+from tools.notion.core.parsing.notion_block import NotionBlock
+from tools.notion.core.parsing.notion_markdown_converter import NotionMarkdownConverter
 
 class NotionPageClient(AbstractNotionClient):
     """Client für die Interaktion mit Notion-Seiten."""

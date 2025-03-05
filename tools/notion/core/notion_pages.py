@@ -1,6 +1,6 @@
 
 from typing import List
-from experiments.rag.notion.config.notion_config import NOTION_PAGES, NOTION_DATABASES, PROJECT_PAGES
+from tools.notion.config.notion_config import NOTION_DATABASES, NOTION_PAGES, PROJECT_PAGES
 
 class NotionPages:
     """Centralized access to Notion pages and databases."""

@@ -1,5 +1,5 @@
-from experiments.rag.notion.core.notion_block import NotionBlock
 from typing import List
+from tools.notion.core.parsing.notion_block import NotionBlock
 
 class NotionMarkdownConverter:
     """Konvertiert Notion-Blöcke in Markdown mit integrierter Mapping-Logik."""
