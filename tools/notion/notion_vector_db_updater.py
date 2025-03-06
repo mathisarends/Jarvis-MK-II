@@ -96,7 +96,6 @@ async def main():
     updater = NotionVectorDBUpdater()
     
     await updater.update_all_pages()
-    
     await updater.start_scheduled_updates()
 
 if __name__ == "__main__":

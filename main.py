@@ -1,27 +1,7 @@
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from rag.smart_rag_manager import SmartRAGManager
 
-load_dotenv()
+rag_manager = SmartRAGManager()
 
-model = ChatOpenAI(model="gpt-4o-mini")
-
-chat_history = [
-    SystemMessage(content="You are an advanced AI assistant that responds precisely, politely, and intelligently.")
-]
-
-print("🔵 Jarvis AI gestartet. Gib 'exit' ein, um das Gespräch zu beenden.")
-
-while True:
-    user_input = input("\n🟢 Du: ")
-
-    if user_input.lower() in ["exit", "quit", "stop"]:
-        print("🔴 Jarvis: Gespräch beendet.")
-        break
-
-    chat_history.append(HumanMessage(content=user_input))
-
-    response = model.stream(chat_history)
-
-    print("\n🔵 Jarvis:", response.content)
-    chat_history.append(AIMessage(content=response.content))
+query = "Was ist Gegenstand meines Jarvis Projekts?"
+response = rag_manager.query(query)
+print("Antwort:", response)
