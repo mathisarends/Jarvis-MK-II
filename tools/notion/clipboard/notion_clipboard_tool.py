@@ -20,11 +20,9 @@ class NotionClipboardTool(BaseTool):
     clipboard_manager: NotionClipboardManager = Field(default_factory=NotionClipboardManager, exclude=True)
     
     def _run(self, content: str) -> str:
-        """Synchroner Wrapper für `_arun()`, falls der Agent synchron läuft."""
         return asyncio.run(self._arun(content))
 
     async def _arun(self, content: str) -> str:
-        """Speichert den Inhalt in der Notion-Zwischenablage und gibt eine Bestätigung zurück."""
         try:
             result = await self.clipboard_manager.append_to_clipboard(content)
             return f"Inhalt erfolgreich gespeichert: {result}"

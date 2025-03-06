@@ -1,0 +1,73 @@
+
+from tools.notion.core.abstract_notion_client import AbstractNotionClient
+from tools.notion.core.notion_pages import NotionPages
+
+class NotionIdeaManager(AbstractNotionClient):
+
+    def __init__(self):
+        super().__init__()
+        self.database_id = NotionPages.get_database_id("IDEAS")
+
+    async def add_idea(self, name, tags=None, status="Initial"):
+
+        data = {
+            "parent": {"database_id": self.database_id},
+            "properties": {
+                "Name": {
+                    "title": [{"text": {"content": name}}]
+                },
+                "Status": {
+                    "status": {"name": status}
+                }
+            },
+            "icon": {
+                "type": "external",
+                "external": {"url": "https://www.notion.so/icons/document_emoji_orange.svg"}
+            }
+        }
+
+        # Falls Tags (Mehrfachauswahl) mitgegeben werden
+        if tags:
+            data["properties"]["Art"] = {
+                "multi_select": [{"name": tag} for tag in tags]
+            }
+
+        try:
+            response = await self._make_request("post", "pages", data)
+
+            if response.status_code == 200:
+                self.logger.info(f"✅ Successfully added idea: {name}")
+                return f"✅ Idea '{name}' added successfully."
+            else:
+                self.logger.error(f"❌ Error adding idea: {response.text}")
+                return f"❌ Error adding idea: {response.text}"
+
+        except Exception as e:
+            self.logger.error(f"❌ API call failed: {str(e)}")
+            return f"❌ API call failed: {str(e)}"
+
+    async def get_all_ideas(self):
+        """Retrieves all ideas from the Notion database."""
+        try:
+            response = await self._make_request("post", f"databases/{self.database_id}/query")
+
+            if response.status_code != 200:
+                self.logger.error(f"❌ Error retrieving ideas: {response.text}")
+                return f"❌ Error retrieving ideas: {response.text}"
+
+            results = response.json().get("results", [])
+            ideas = [
+                {
+                    "id": item["id"],
+                    "name": item["properties"]["Name"]["title"][0]["text"]["content"],
+                    "status": item["properties"]["Status"]["status"]["name"],
+                    "tags": [tag["name"] for tag in item["properties"].get("Art", {}).get("multi_select", [])]
+                }
+                for item in results
+            ]
+
+            return ideas
+
+        except Exception as e:
+            self.logger.error(f"❌ API call failed: {str(e)}")
+            return f"❌ API call failed: {str(e)}"
