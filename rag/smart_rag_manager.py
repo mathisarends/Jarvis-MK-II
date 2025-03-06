@@ -28,7 +28,7 @@ class SmartRAGManager:
         """Lässt das LLM entscheiden, ob eine semantische Suche notwendig ist."""
         decision_chain = LLMChain(llm=self.llm, prompt=self.decision_prompt)
         result = decision_chain.run(question).strip().lower()
-        self.logger.info(f"Entscheidung für Retrieval: {result}")
+        self.logger.info("Entscheidung für Retrieval: %s", result)
         return result == "yes"
 
     def query(self, query: str, chat_history=None) -> str:
